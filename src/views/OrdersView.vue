@@ -1,7 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { orderAPI } from '../mock/api'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const orders = ref([])
 const loading = ref(false)
 const error = ref('')
@@ -10,8 +11,12 @@ const loadOrders = async () => {
   try {
     loading.value = true
     error.value = ''
-    const res = await orderAPI.getOrders()
-    orders.value = res.data.orders
+    const response = await fetch('http://localhost:3001/api/orders')
+    if (!response.ok) {
+      throw new Error(`HTTP错误 ${response.status}`)
+    }
+    const { data } = await response.json()
+    orders.value = data.orders
   } catch (err) {
     error.value = err.message
   } finally {
@@ -47,7 +52,11 @@ onMounted(() => {
           <div class="flex">
             <div class="flex-shrink-0">
               <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clip-rule="evenodd"
+                />
               </svg>
             </div>
             <div class="ml-3">
@@ -74,7 +83,9 @@ onMounted(() => {
             :key="order.id"
             class="bg-white rounded-lg shadow-md overflow-hidden"
           >
-            <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+            <div
+              class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center"
+            >
               <span class="text-gray-600">订单号：{{ order.id }}</span>
               <span class="text-green-600 font-medium">{{ order.status }}</span>
             </div>
@@ -100,7 +111,9 @@ onMounted(() => {
               </div>
             </div>
 
-            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+            <div
+              class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center"
+            >
               <span class="text-gray-600">下单时间：{{ order.createTime }}</span>
               <span class="text-lg font-medium text-gray-900">总计：¥{{ order.totalPrice }}</span>
             </div>

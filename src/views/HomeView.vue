@@ -12,8 +12,11 @@ const loadFeaturedProducts = async () => {
   try {
     loading.value = true
     error.value = ''
-    const res = await productAPI.getProducts(1, 4)
-    featuredProducts.value = res.data.items
+    const response = await fetch('http://localhost:3001/api/products?isFeatured=true')
+    if (!response.ok) {
+      throw new Error(`HTTP错误 ${response.status}`)
+    }
+    featuredProducts.value = await response.json()
   } catch (err) {
     error.value = err.message
   } finally {

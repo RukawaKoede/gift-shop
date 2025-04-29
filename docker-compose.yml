@@ -1,23 +1,24 @@
 version: '3.8'
 
 services:
-  dev:  # 开发环境
+  dev: # 开发环境
     build:
       context: .
       dockerfile: docker/Dockerfile
       target: dev
     volumes:
-      - .:/app  # 绑定项目根目录
-      - /app/node_modules  # 保留容器内的 node_modules
+      - .:/app # 绑定项目根目录
+      - /app/node_modules # 保留容器内的 node_modules
     ports:
-      - "5173:5173"    # Vite 默认端口
+      - '5173:5173' # Vite 默认端口
+      - '3001:3001' # 后端API服务器端口
     environment:
       - NODE_ENV=development
 
-  prod:  # 生产环境模拟
+  prod: # 生产环境模拟
     build:
       context: .
       dockerfile: docker/Dockerfile
       target: prod
     ports:
-      - "8080:80"      # Nginx 默认端口
+      - '8080:80' # Nginx 默认端口

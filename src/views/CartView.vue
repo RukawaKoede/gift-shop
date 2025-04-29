@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { cartAPI, orderAPI } from '../mock/api'
 
 const router = useRouter()
 const cart = ref({ items: [], totalPrice: 0 })
@@ -17,8 +16,15 @@ const loadCart = async () => {
   try {
     loading.value = true
     error.value = ''
-    const res = await cartAPI.getCart()
-    cart.value = res.data
+    const response = await fetch('http://localhost:3001/api/cart/1')
+    if (!response.ok) {
+      throw new Error(`HTTP错误 ${response.status}`)
+    }
+    const { data } = await response.json()
+    cart.value = {
+      items: data || [],
+      totalPrice: (data || []).reduce((total, item) => total + item.price * item.quantity, 0),
+    }
   } catch (err) {
     error.value = err.message
   } finally {
@@ -30,10 +36,28 @@ const createOrder = async () => {
   try {
     loading.value = true
     error.value = ''
-    await orderAPI.createOrder({
-      ...orderForm.value,
-      cartItems: cart.value.items.map((item) => item.id),
+    const response = await fetch('http://localhost:3001/api/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: 1,
+        address: orderForm.value.address,
+        phone: orderForm.value.phone,
+        items: cart.value.items.map((item) => ({
+          product_id: item.id,
+          quantity: item.quantity,
+        })),
+        total_amount: cart.value.totalPrice,
+      }),
     })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || `HTTP错误 ${response.status}`)
+    }
+
     router.push('/orders')
   } catch (err) {
     error.value = err.message
@@ -119,8 +143,18 @@ onMounted(() => {
                             @click="updateQuantity(item.id, item.quantity - 1)"
                             :disabled="item.quantity <= 1"
                           >
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                            <svg
+                              class="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M20 12H4"
+                              />
                             </svg>
                           </button>
                           <span class="text-gray-900 font-medium">{{ item.quantity }}</span>
@@ -128,8 +162,18 @@ onMounted(() => {
                             class="text-gray-500 hover:text-gray-700 focus:outline-none"
                             @click="updateQuantity(item.id, item.quantity + 1)"
                           >
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            <svg
+                              class="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M12 4v16m8-8H4"
+                              />
                             </svg>
                           </button>
                         </div>

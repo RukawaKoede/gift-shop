@@ -14,6 +14,7 @@ const error = ref('')
 const loading = ref(false)
 const router = useRouter()
 const route = useRoute()
+const showUnregisteredModal = ref(false)
 
 const handleSubmit = async () => {
   try {
@@ -24,19 +25,35 @@ const handleSubmit = async () => {
         username: form.value.username,
         password: form.value.password,
       })
+
       localStorage.setItem('token', res.data.token)
       localStorage.setItem('userId', res.data.userId)
       emit('login-success')
-      // 登录成功后，如果之前是想访问购物车，则自动跳转到购物车页面
+
+      // 保留购物车跳转逻辑
       if (route.path === '/cart') {
         router.push('/cart')
+      } else {
+        router.push('/')
       }
     } else {
-      await authAPI.register(form.value)
-      isLogin.value = true
+      const res = await authAPI.register(form.value)
+      localStorage.setItem('token', res.data.token)
+      localStorage.setItem('userId', res.data.userId)
+      emit('login-success')
+      router.push('/')
     }
   } catch (err) {
-    error.value = err.message
+    if (err.message.includes('用户不存在')) {
+      // 自动注册并跳转到首页
+      const res = await authAPI.register(form.value)
+      localStorage.setItem('token', res.data.token)
+      localStorage.setItem('userId', res.data.userId)
+      emit('login-success')
+      router.push('/')
+    } else {
+      error.value = err.message
+    }
   } finally {
     loading.value = false
   }
@@ -50,11 +67,8 @@ const closeModal = () => {
 <template>
   <div class="fixed inset-0 flex items-center justify-center z-50">
     <!-- 毛玻璃背景 -->
-    <div 
-      class="absolute inset-0 backdrop-blur-sm bg-black/30"
-      @click="$emit('close')"
-    ></div>
-    
+    <div class="absolute inset-0 backdrop-blur-sm bg-black/30" @click="$emit('close')"></div>
+
     <!-- 登录框 -->
     <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-8">
       <!-- 关闭按钮 -->
@@ -113,6 +127,7 @@ const closeModal = () => {
           type="submit"
           class="w-full bg-indigo-600 text-white py-3 px-4 rounded-md hover:bg-indigo-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           :disabled="loading"
+          @click.prevent="handleSubmit"
         >
           <span v-if="loading" class="inline-block mr-2">
             <svg
@@ -149,6 +164,21 @@ const closeModal = () => {
           </a>
         </div>
       </form>
+
+      <!-- 未注册提示框 -->
+      <div v-if="showUnregisteredModal" class="fixed inset-0 flex items-center justify-center z-50">
+        <div class="absolute inset-0 bg-black/30" @click="showUnregisteredModal = false"></div>
+        <div class="relative bg-white rounded-lg p-8 max-w-md w-full mx-4">
+          <h3 class="text-lg font-bold mb-4">账号未注册</h3>
+          <p class="text-gray-600 mb-6">检测到该账号尚未注册，请完成注册流程</p>
+          <button
+            @click="showUnregisteredModal = false"
+            class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors"
+          >
+            确认
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>

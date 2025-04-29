@@ -2,67 +2,73 @@
 import { users, products, orders, cart } from './data'
 
 // 用户认证API
+import axios from 'axios'
+
 export const authAPI = {
-  // 用户注册
-  register: (userData) => {
-    const user = {
-      id: String(users.length + 1),
-      ...userData,
-    }
-    users.push(user)
+  register: async (userData) => {
+    const response = await axios.post('http://localhost:3001/api/register', userData)
     return {
       code: 200,
-      message: '注册成功',
-      data: {
-        userId: user.id,
-        username: user.username,
-      },
+      data: response.data,
     }
   },
 
-  // 用户登录
-  login: (credentials) => {
-    const user = users.find(
-      (u) => u.username === credentials.username && u.password === credentials.password,
-    )
-    if (user) {
-      return {
-        code: 200,
-        message: '登录成功',
-        data: {
-          token: 'mock_token_' + user.id,
-          userId: user.id,
-          username: user.username,
-        },
-      }
+  login: async (credentials) => {
+    const response = await axios.post('http://localhost:3001/api/login', credentials)
+    return {
+      code: 200,
+      message: '登录成功',
+      data: {
+        token: response.data.token,
+        userId: response.data.userId,
+        username: credentials.username,
+      },
     }
-    throw new Error('用户名或密码错误')
   },
 }
 
 // 商品API
 export const productAPI = {
-  // 获取商品列表
   getProducts: (page = 1, size = 10) => {
     const start = (page - 1) * size
     const end = start + size
     return {
       code: 200,
       data: {
-        total: products.length,
-        items: products.slice(start, end),
+        items: products.slice(start, end).map((product) => ({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          stock: product.stock, // 确保返回库存字段
+          image: product.image || '/default-product.png', // 添加默认图片路径
+        })),
       },
     }
   },
 
-  // 获取商品详情
-  getProductById: (id) => {
-    const product = products.find((p) => p.id === id)
-    if (product) {
-      return {
-        code: 200,
-        data: product,
+  createProduct: (productData) => {
+    const newProduct = {
+      id: String(products.length + 1),
+      ...productData,
+      image: productData.image || '/default-product.png', // 统一默认图片
+      stock: productData.stock || 0, // 添加库存字段
+    }
+    products.push(newProduct)
+    return {
+      code: 200,
+      data: newProduct,
+    }
+  },
+  updateProduct: (id, productData) => {
+    const index = products.findIndex((p) => p.id === id)
+    if (index > -1) {
+      products[index] = {
+        ...products[index],
+        ...productData,
+        image: productData.image || products[index].image,
+        stock: productData.stock || products[index].stock, // 保留库存字段
       }
+      return { code: 200, data: products[index] }
     }
     throw new Error('商品不存在')
   },
@@ -137,6 +143,81 @@ export const orderAPI = {
       code: 200,
       data: {
         orders,
+      },
+    }
+  },
+}
+
+export const userAPI = {
+  getUsers: async () => {
+    const newUser = {
+      id: String(users.length + 1),
+      ...userData,
+    }
+    users.push(newUser) // 修复变量名错误
+    return {
+      code: 200,
+      data: {
+        success: true,
+        user: {
+          id: newUser.id,
+          username: newUser.username,
+        },
+      },
+    }
+  },
+
+  // 用户登录
+  login: (credentials) => {
+    const foundUser = users.find(
+      (u) => u.username === credentials.username && u.password === credentials.password,
+    )
+    if (foundUser) {
+      return {
+        code: 200,
+        message: '登录成功',
+        data: {
+          token: 'mock_token_' + foundUser.id,
+          userId: foundUser.id,
+          username: foundUser.username,
+        },
+      }
+    }
+    throw new Error('用户名或密码错误')
+  },
+  createUser: async (userData) => {
+    const newUser = {
+      id: String(users.length + 1),
+      ...userData,
+      created_at: new Date().toISOString(),
+    }
+    users.push(newUser)
+    return {
+      code: 200,
+      data: {
+        success: true,
+        user: {
+          id: newUser.id,
+          username: newUser.username,
+          email: newUser.email,
+        },
+      },
+    }
+  },
+  deleteUser: async (userId) => {
+    const newUser = {
+      id: String(users.length + 1),
+      ...userData,
+    }
+    users.push(user)
+    return {
+      code: 200,
+      data: {
+        success: true,
+        user: {
+          id: newUser.id,
+          username: newUser.username,
+        },
       },
     }
   },

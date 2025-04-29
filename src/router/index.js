@@ -34,6 +34,33 @@ const router = createRouter({
       component: () => import('../views/OrdersView.vue'),
       meta: { title: '我的订单' },
     },
+    // 后台管理路由
+    {
+      path: '/admin',
+      name: 'admin',
+      component: () => import('../views/admin/AdminLayout.vue'),
+      meta: { title: '后台管理' },
+      children: [
+        {
+          path: 'products',
+          name: 'admin-products',
+          component: () => import('../views/admin/ProductManagement.vue'),
+          meta: { title: '商品管理' },
+        },
+        {
+          path: 'orders',
+          name: 'admin-orders',
+          component: () => import('../views/admin/OrderManagement.vue'),
+          meta: { title: '订单管理' },
+        },
+        {
+          path: 'users',
+          name: 'admin-users',
+          component: () => import('../views/admin/UserManagement.vue'),
+          meta: { title: '用户管理' },
+        },
+      ],
+    },
   ],
 })
 

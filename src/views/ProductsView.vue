@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { productAPI } from '../mock/api'
 
 const router = useRouter()
 const products = ref([])
@@ -12,9 +11,13 @@ const loadProducts = async () => {
   try {
     loading.value = true
     error.value = ''
-    const res = await productAPI.getProducts()
-    products.value = res.data.items
+    const response = await fetch('http://localhost:3001/api/products')
+    if (!response.ok) {
+      throw new Error(`HTTP错误 ${response.status}`)
+    }
+    products.value = await response.json()
   } catch (err) {
+    console.error('获取商品列表失败:', err)
     error.value = err.message
   } finally {
     loading.value = false

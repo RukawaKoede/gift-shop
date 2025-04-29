@@ -7,7 +7,9 @@ import AuthModal from './components/AuthModal.vue'
 const isLoggedIn = ref(false)
 const showAuthModal = ref(false)
 
-const handleLoginSuccess = () => {
+const handleLoginSuccess = (token, userId) => {
+  localStorage.setItem('token', token)
+  localStorage.setItem('userId', userId)
   isLoggedIn.value = true
   showAuthModal.value = false
 }
@@ -16,6 +18,7 @@ const logout = () => {
   localStorage.removeItem('token')
   localStorage.removeItem('userId')
   isLoggedIn.value = false
+  router.push('/')
 }
 
 onMounted(() => {
