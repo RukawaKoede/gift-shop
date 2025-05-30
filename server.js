@@ -113,7 +113,7 @@ let carts = {}
 // 添加商品到购物车
 app.post('/api/cart/items', (req, res) => {
   try {
-    const { userId, productId, quantity } = req.body
+    const { userId, productId, quantity, size, color, greeting } = req.body // Changed custom_size to size, custom_color to color, custom_greeting to greeting
 
     if (!userId || !productId || !quantity) {
       return res.status(400).json({
@@ -150,6 +150,10 @@ app.post('/api/cart/items', (req, res) => {
     if (existingItem) {
       // 更新数量
       existingItem.quantity += quantity
+      // 如果商品已存在，也应该更新其定制信息（如果提供了新的话）
+      if (size) existingItem.custom_size = size // Changed custom_size to size
+      if (color) existingItem.custom_color = color // Changed custom_color to color
+      if (greeting) existingItem.custom_greeting = greeting // Changed custom_greeting to greeting
     } else {
       // 添加新商品
       carts[userId].push({
@@ -158,6 +162,9 @@ app.post('/api/cart/items', (req, res) => {
         name: product.name,
         price: product.price,
         image: product.image,
+        custom_size: size, // Changed custom_size to size
+        custom_color: color, // Changed custom_color to color
+        custom_greeting: greeting, // Changed custom_greeting to greeting
       })
     }
 
@@ -518,7 +525,8 @@ app.get('/api/orders/:id', (req, res) => {
 // 创建订单
 app.post('/api/orders', (req, res) => {
   try {
-    const { user_id, address, phone, total_amount } = req.body
+    const { user_id, address, phone, total_amount, custom_size, custom_color, custom_greeting } =
+      req.body
 
     // 字段验证
     if (!user_id || !address || !phone || !total_amount) {
@@ -549,12 +557,19 @@ app.post('/api/orders', (req, res) => {
         price: item.price,
         quantity: item.quantity,
         image: item.image,
+        custom_size: item.custom_size, // 从购物车项目中获取
+        custom_color: item.custom_color, // 从购物车项目中获取
+        custom_greeting: item.custom_greeting, // 从购物车项目中获取
       })),
       total_amount,
       status: '待发货',
       created_at: new Date().toISOString(),
       createTime: new Date().toLocaleString(),
       totalPrice: total_amount,
+      // 将定制信息也存储在订单级别，如果需要的话
+      // custom_size,
+      // custom_color,
+      // custom_greeting
     }
 
     orders.push(newOrder)
@@ -588,7 +603,16 @@ app.put('/api/orders/:id', (req, res) => {
       })
     }
 
-    const { address, phone, status } = req.body
+    const {
+      address,
+      phone,
+      status,
+      items,
+      total_amount,
+      custom_size,
+      custom_color,
+      custom_greeting,
+    } = req.body
 
     // 验证订单状态的有效性
     const validStatuses = ['待付款', '已付款', '已发货', '已完成', '已取消']
@@ -605,6 +629,12 @@ app.put('/api/orders/:id', (req, res) => {
       ...(address && { address }),
       ...(phone && { phone }),
       ...(status && { status }),
+      ...(items && { items }), // items 内部应该也包含定制信息
+      ...(total_amount && { total_amount }),
+      // 如果订单级别也存储定制信息，则更新
+      // ...(custom_size && { custom_size }),
+      // ...(custom_color && { custom_color }),
+      // ...(custom_greeting && { custom_greeting }),
       updated_at: new Date().toISOString(),
     }
 
